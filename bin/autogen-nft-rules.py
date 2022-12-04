@@ -51,7 +51,7 @@ class ZoneClassification(enum.IntEnum):
         DMZ,
         VPN,
         FWSYNC,
-    ) = range(5)
+    ) = range(6)
 # --- end of ZoneClassification ---
 
 
