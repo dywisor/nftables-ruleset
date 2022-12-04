@@ -1,0 +1,17 @@
+[Unit]
+Description     = enable IPv6 forwarding while nftables is running
+BindsTo         = nftables.service
+After           = nftables.service
+
+[Service]
+Type            = simple
+RemainAfterExit = yes
+Restart         = no
+
+ExecStart       = /sbin/sysctl -w net.ipv6.conf.all.forwarding=1
+ExecStop        = /sbin/sysctl -w net.ipv6.conf.all.forwarding=0
+
+[Install]
+# WantedBy sysinit.target (early) or multi-user.target (late)
+WantedBy        = multi-user.target
+Also            = nftables.service
