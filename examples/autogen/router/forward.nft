@@ -6,7 +6,10 @@ chain forward {
     jump global_stateful;
 
     #> interface-based lookup table
-    iifname . oifname vmap @autogen_forward_jump_table;
+    ## when using per src X dst rules:
+    ## iifname . oifname vmap @autogen_forward_jump_table;
+    ## when using per dst rules
+    oifname vmap @autogen_forward_jump_table;
 
     #> CLEANUP
     ##> drop on external interfaces
