@@ -10,8 +10,8 @@ chain forward {
 
     #> CLEANUP
     ##> drop on external interfaces
-    ## iifname @autogen_iface_external ct state new log level warn prefix "drop-forward: ";
-    iifname @autogen_iface_external drop;
+    ## iifname @autogen_iface_class_external ct state new log level warn prefix "drop-forward: ";
+    iifname @autogen_iface_class_external drop;
 
     ##> log new connections before reject
     ct state new log level warn prefix "reject-forward: ";
