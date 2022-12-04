@@ -730,7 +730,7 @@ def get_argument_parser(prog):
 # --- end of get_argument_parser (...) ---
 
 
-def gen_nft_set(name, set_type, items=None, *, flags=None):
+def gen_nft_set(name, set_type, items=None, *, flags=None, quote_value=True):
     ii = 4 * ' '
 
     yield f'set {name} {{'
@@ -742,8 +742,14 @@ def gen_nft_set(name, set_type, items=None, *, flags=None):
     if items:
         yield ''
         yield f'{ii}elements = {{'
-        for item in items:
-            yield f'{ii}{ii}"{item!s}",'
+
+        if quote_value:
+            for item in items:
+                yield f'{ii}{ii}"{item!s}",'
+        else:
+            for item in items:
+                yield f'{ii}{ii}{item!s},'
+        # -- quote or not
         yield f'{ii}}};'
     # -- end if
 
@@ -752,12 +758,12 @@ def gen_nft_set(name, set_type, items=None, *, flags=None):
 
 
 def gen_nft_ip_set(name, ipver, items, *, flags=['constant', 'interval']):
-    return gen_nft_set(name, f'ipv{ipver:d}_addr', items, flags=flags)
+    return gen_nft_set(name, f'ipv{ipver:d}_addr', items, flags=flags, quote_value=False)
 # --- end of gen_nft_ip_set (...) ---
 
 
 def gen_nft_ifname_set(name, items, *, flags=['constant']):
-    return gen_nft_set(name, 'ifname', items, flags=flags)
+    return gen_nft_set(name, 'ifname', items, flags=flags, quote_value=True)
 # --- end of gen_nft_ifname_set (...) ---
 
 
