@@ -48,6 +48,7 @@ class ZoneClassification(enum.IntEnum):
         UNDEF,
         INTERNAL,
         EXTERNAL,
+        DMZ,
         VPN,
         FWSYNC,
     ) = range(5)
@@ -495,6 +496,9 @@ def load_config(filepath):
 
             elif ytype_norm in {'external', 'wan'}:
                 return ZoneClassification.EXTERNAL
+
+            elif ytype_norm in {'dmz'}:
+                return ZoneClassification.DMZ
 
             elif ytype_norm in {'vpn'}:
                 return ZoneClassification.VPN
