@@ -51,7 +51,10 @@ class ZoneClassification(enum.IntEnum):
         DMZ,
         VPN,
         FWSYNC,
-    ) = range(6)
+
+        # virtual classifications (not configurable)
+        LOCAL_SITE,
+    ) = range(7)
 # --- end of ZoneClassification ---
 
 
@@ -772,6 +775,13 @@ def gen_nft_ifname_set(name, items, *, flags=['constant']):
 
 
 def gen_fwrules_base_sets(fw_config):
+    # virtual classifications
+    # - local site := internal | dmz
+    zclass_set_local_site = {
+        ZoneClassification.INTERNAL,
+        ZoneClassification.DMZ,
+    }
+
     zclass_map = {
         zclass: ZonesCollection()
         for zclass in ZoneClassification
@@ -779,6 +789,10 @@ def gen_fwrules_base_sets(fw_config):
 
     for zone in fw_config.zones.iter_zones():
         zclass_map[zone.classification].add_zone(zone)
+
+        # add to virtual classifications
+        if zone.classification in zclass_set_local_site:
+            zclass_map[ZoneClassification.LOCAL_SITE].add_zone(zone)
     # --
 
     # by zone classification: interfaces, networks
