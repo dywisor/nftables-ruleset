@@ -1,0 +1,5 @@
+# allow connections based on ct state
+chain global_stateful {
+    # accept packets for which a ct state already exists
+    ct state established,related accept;
+}

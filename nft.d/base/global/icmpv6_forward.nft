@@ -1,0 +1,86 @@
+# Handle IPv6 ICMP traffic for the forward chain
+#
+#   Always include the base ruleset:
+#
+#   * global_icmpv6_forward
+#
+#   Depending on your needs,
+#   include one or more of the following addons:
+#
+#   * global_icmpv6_forward_ping  (RECOMMENED as per RFC)
+#   * global_icmpv6_forward_mobhome
+#
+
+# forward
+# RFC 4890 Section 4.3
+#   4.3.  Recommendations for ICMPv6 Transit Traffic
+#   4.3.1.  Traffic That Must Not Be Dropped
+#   4.3.2.  Traffic That Normally Should Not Be Dropped
+#   4.3.4.  Traffic for Which a Policy Should Be Defined
+#   4.3.5.  Traffic That Should Be Dropped Unless a Good Case Can Be Made
+#
+chain global_icmpv6_forward {
+    #> [4.3.1] Destination Unreachable (Type 1) - All codes
+    ip6 nexthdr icmpv6 icmpv6 type 1 accept;
+
+    #> [4.3.1] Packet Too Big (Type 2)
+    ip6 nexthdr icmpv6 icmpv6 type 2 accept;
+
+    #> [4.3.1] Time Exceeded (Type 3) - Code 0 only
+    #> [4.3.2] Time Exceeded (Type 3) - Code 1
+    ip6 nexthdr icmpv6 icmpv6 type 3 icmpv6 code 0-1 accept;
+
+    #> [4.3.1] Parameter Problem (Type 4) - Codes 1 and 2 only
+    #> [4.3.2] Parameter Problem (Type 4) - Code 0
+    ip6 nexthdr icmpv6 icmpv6 type 4 icmpv6 code 0-2 accept;
+
+    #> [4.3.4] Seamoby Experimental (Type 150)
+    ip6 nexthdr icmpv6 icmpv6 type 150 drop;
+
+    #> [4.3.4] Unallocated Error messages
+    #  (Types 5-99 inclusive and 102-126 inclusive)
+    ip6 nexthdr icmpv6 icmpv6 type {5-99, 102-126} drop;
+
+    #> [4.3.4] Unallocated Informational messages
+    #  (Types 154-199 inclusive and 202-254 inclusive).
+    ip6 nexthdr icmpv6 icmpv6 type {154-199, 202-254} drop;
+
+    #> [4.3.5] Node Information Query (Type 139)
+    ip6 nexthdr icmpv6 icmpv6 type 139 drop;
+
+    #> [4.3.5] Node Information Response (Type 140)
+    ip6 nexthdr icmpv6 icmpv6 type 140 drop;
+
+    #> [4.3.5] Router Renumbering (Type 138)
+    ip6 nexthdr icmpv6 icmpv6 type 138 drop;
+
+    #> [4.3.5] experimental allocations: Types 100, 101, 200, and 201.
+    ip6 nexthdr icmpv6 icmpv6 type {100, 101, 200, 201} drop;
+
+    #> [4.3.5] extension type numbers: Types 127 and 255.
+    ip6 nexthdr icmpv6 icmpv6 type {127, 255} drop;
+}
+
+
+chain global_icmpv6_forward_mobhome {
+    #> [4.3.2] Home Agent Address Discovery Request (Type 144)
+    ip6 nexthdr icmpv6 icmpv6 type 144 accept;
+
+    #> [4.3.2] Home Agent Address Discovery Reply (Type 145)
+    ip6 nexthdr icmpv6 icmpv6 type 145 accept;
+
+    #> [4.3.2] Mobile Prefix Solicitation (Type 146)
+    ip6 nexthdr icmpv6 icmpv6 type 146 accept;
+
+    #> [4.3.2] Mobile Prefix Advertisement (Type 147)
+    ip6 nexthdr icmpv6 icmpv6 type 147 accept;
+}
+
+
+chain global_icmpv6_forward_ping {
+    #> [4.3.1] Echo Request (Type 128)
+    ip6 nexthdr icmpv6 icmpv6 type echo-request limit rate 5/second accept;
+
+    #> [4.3.1] Echo Response (Type 129)
+    # not needed, use global_stateful instead (may break asym. routing)
+}

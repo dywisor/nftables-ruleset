@@ -1,0 +1,7 @@
+chain prerouting {
+    type filter hook prerouting priority -150;
+    policy accept;
+
+    # https://javapipe.com/blog/iptables-ddos-protection/
+    jump global_out_of_state;
+}

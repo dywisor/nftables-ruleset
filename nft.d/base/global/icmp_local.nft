@@ -1,0 +1,53 @@
+# Handle IPv4 ICMP traffic for the input/output chains
+#
+#   * global_icmp_local -- base rules for input/output
+
+
+# loosely based on "draft-ietf-opsec-icmp-filtering-04",
+# https://datatracker.ietf.org/doc/html/draft-ietf-opsec-icmp-filtering-04
+#
+# -> 2.  Internet Control Message Protocol version 4 (ICMP)
+
+chain global_icmp_local {
+    #> Destination Unreachable (Type 3)
+    #  accept code 0-5, 7, 11-15
+    #  drop   code 6, 8
+    #  ???    code 9-10
+    ip protocol icmp icmp type 3 icmp code {0-5, 7, 11-15} accept;
+    ip protocol icmp icmp type 3 icmp code {6, 8} drop;
+
+    #> Source Quench (Type 4, Code 0)
+    ip protocol icmp icmp type 4 drop;
+
+    #> Redirect (Type 5)
+    # -- draft recommends accept/rate limiting, but drop it here
+    ip protocol icmp icmp type 5 drop;
+
+    #> Time Exceeded (Type 11)
+    ip protocol icmp icmp type 11 icmp code {0-1} accept;
+
+    #> Parameter Problem (Type 12)
+    ip protocol icmp icmp type 12 icmp code {0-1} accept;
+
+    #> Echo Request (Type 8)
+    ip protocol icmp icmp type 8 icmp code 0 limit rate 5/second accept;
+
+    #> Echo Reply (Type 0)
+    # use global_stateful instead
+    
+    #> Router Solicitation or Router Advertisement message
+    #  * Router Advertisement Message (Type 9, Code 0)
+    #  * Router Solicitation Message (Type 10, Code 0)
+    # -- draft recommends accept/rate limiting, but drop it here
+    #> Timestamp Message (Type 13, Code 0)
+    # -- draft recommends accept/rate limiting, but drop it here
+    #> Timestamp Reply Message (Type 14, Code 0)
+    # -- draft recommends accept/rate limiting, but drop it here
+    #> Information Request Message (Type 15, Code 0)
+    #> Information Reply Message (Type 16, Code 0)
+    #> Address Mask Request (Type 17, Code 0)
+    # -- draft recommends accept/rate limiting, but drop it here
+    #> Address Mask Reply (Type 18, Code 0)
+    # -- draft recommends accept/rate limiting, but drop it here
+    ip protocol icmp icmp type {9-10, 13-18} drop;
+}

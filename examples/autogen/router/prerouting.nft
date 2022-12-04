@@ -1,0 +1,13 @@
+chain prerouting {
+    type filter hook prerouting priority -150;
+    policy accept;
+
+    #> drop out-of-state packets
+    jump global_out_of_state;
+
+    #> drop source-spoofed packets
+    jump autogen_prerouting_antispoof;
+
+    #> interface-based lookup table
+    iifname vmap @autogen_nat_prerouting_jump_table;
+}

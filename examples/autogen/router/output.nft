@@ -1,0 +1,20 @@
+chain output {
+    type filter hook output priority 0;
+    policy drop;
+
+    #> skip on loopback
+    oif lo accept;
+
+    #> stateful
+    jump global_stateful;
+
+    #> interface-based lookup table
+    oifname vmap @autogen_output_jump_table;
+
+    #> CLEANUP
+    ##> log new connections before reject
+    ct state new log level warn prefix "reject-output: ";
+    ip protocol tcp reject with tcp reset;
+    ip6 nexthdr tcp reject with tcp reset;
+    reject;
+}

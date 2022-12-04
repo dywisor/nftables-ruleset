@@ -1,0 +1,21 @@
+chain forward {
+    type filter hook forward priority 0;
+    policy drop;
+
+    #> stateful
+    jump global_stateful;
+
+    #> interface-based lookup table
+    iifname . oifname vmap @autogen_forward_jump_table;
+
+    #> CLEANUP
+    ##> drop on external interfaces
+    ## iifname @autogen_iface_external ct state new log level warn prefix "drop-forward: ";
+    iifname @autogen_iface_external drop;
+
+    ##> log new connections before reject
+    ct state new log level warn prefix "reject-forward: ";
+    ip protocol tcp reject with tcp reset;
+    ip6 nexthdr tcp reject with tcp reset;
+    reject;
+}

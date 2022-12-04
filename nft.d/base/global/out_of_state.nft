@@ -1,0 +1,10 @@
+# drop connections based on ct state
+chain global_out_of_state {
+    # drop new TCP connections with bogus flags
+    ct state new \
+      tcp flags & (syn|ack|fin|rst) != syn \
+      counter drop;
+
+    # drop invalid ct state
+    ct state invalid counter drop;
+}

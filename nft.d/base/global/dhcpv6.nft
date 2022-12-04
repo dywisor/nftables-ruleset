@@ -1,0 +1,12 @@
+# allow DHCPv6 client / server
+# FIXME: well-known dst IPs?
+
+# global_dhcpv6_client : from client to server (usually: output chain) 
+chain global_dhcpv6_c2s {
+    ip6 nexthdr udp udp sport dhcpv6-client udp dport dhcpv6-server accept;
+}
+
+# global_dhcpv6_server : from server to client (usually: input chain)
+chain global_dhcpv6_s2c {
+    ip6 nexthdr udp udp sport dhcpv6-server udp dport dhcpv6-client accept;
+}

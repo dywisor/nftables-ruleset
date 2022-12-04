@@ -1,0 +1,21 @@
+# input: @@NAME@@
+chain input_@@NAME@@ {
+    #> Rules
+    ## ##> ICMP essentials
+    ## ip protocol icmp jump global_icmp_local;
+    ## ip6 nexthdr icmpv6 jump global_icmpv6_local;
+
+    ## ##> SSH server
+    ## tcp dport ssh accept;
+
+    #> CLEANUP
+    ## ##> log new connections before reject
+    ## ct state new log level warn prefix "reject-input: ";
+    ## ip protocol tcp reject with tcp reset;
+    ## ip6 nexthdr tcp reject with tcp reset;
+    ## reject;
+
+    ##> log new connections before drop
+    ct state new log level warn prefix "drop-input: ";
+    drop;
+}

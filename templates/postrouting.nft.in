@@ -1,0 +1,4 @@
+# postrouting: @@NAME@@
+chain postrouting_@@NAME@@ {
+    ;
+}

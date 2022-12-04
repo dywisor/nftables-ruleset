@@ -1,0 +1,58 @@
+# Handle IPv4 ICMP traffic for the forward chain
+#
+#   Always include the base ruleset:
+#
+#   * global_icmp_forward
+#
+#   Depending on your needs,
+#   include one or more of the following addons:
+#
+#   * global_icmp_forward_ping
+#
+
+# loosely based on "draft-ietf-opsec-icmp-filtering-04",
+# https://datatracker.ietf.org/doc/html/draft-ietf-opsec-icmp-filtering-04
+#
+# -> 2.  Internet Control Message Protocol version 4 (ICMP)
+
+chain global_icmp_forward {
+    #> Destination Unreachable (Type 3)
+    #  accept code 0, 1, 4, 13
+    #  drop   code 2, 3, 5, 6, 7, 8, 11, 12, 14, 15
+    #  ???    code 9-10
+    ip protocol icmp icmp type 3 icmp code {0, 1, 4, 13} accept;
+    ip protocol icmp icmp type 3 icmp code {2, 3, 5, 6, 7, 8, 11, 12, 14, 15} drop;
+
+    #> Source Quench (Type 4, Code 0)
+    ip protocol icmp icmp type 4 drop;
+
+    #> Redirect (Type 5)
+    ip protocol icmp icmp type 5 drop;
+
+    #> Time Exceeded (Type 11)
+    ip protocol icmp icmp type 11 icmp code 0-1 accept;
+
+    #> Parameter Problem (Type 12)
+    ip protocol icmp icmp type 12 icmp code 0-1 accept;
+
+    #> echoreq/echo response -> see global_icmp_forward_ping
+    
+    #> Router Solicitation or Router Advertisement message
+    #  * Router Advertisement Message (Type 9, Code 0)
+    #  * Router Solicitation Message (Type 10, Code 0)
+    #> Timestamp Message (Type 13, Code 0)
+    #> Timestamp Reply Message (Type 14, Code 0)
+    #> Information Request Message (Type 15, Code 0)
+    #> Information Reply Message (Type 16, Code 0)
+    #> Address Mask Request (Type 17, Code 0)
+    #> Address Mask Reply (Type 18, Code 0)
+    ip protocol icmp icmp type {9-10, 13-18} drop;
+}
+
+chain global_icmp_forward_ping {
+    #> Echo Request (Type 8)
+    ip protocol icmp icmp type 8 icmp code 0 limit rate 5/second accept;
+
+    #> Echo Reply (Type 0)
+    # use global_stateful instead
+}

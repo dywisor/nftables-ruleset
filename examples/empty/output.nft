@@ -1,0 +1,18 @@
+chain output {
+    type filter hook output priority 0;
+    policy drop;
+
+    # skip on loopback
+    oif lo accept;
+
+    jump global_stateful;
+    ip protocol icmp jump global_icmp_local;
+    ip6 nexthdr icmpv6 jump global_icmpv6_local;
+
+    #> CLEANUP
+    ##> log new connections before reject
+    ct state new log level warn prefix "reject-output: ";
+    ip protocol tcp reject with tcp reset;
+    ip6 nexthdr tcp reject with tcp reset;
+    reject;
+}

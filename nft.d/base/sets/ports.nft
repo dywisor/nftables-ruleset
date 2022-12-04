@@ -1,0 +1,34 @@
+# collection of basic port sets
+
+set ports_mail_client {
+  type inet_service;
+  flags constant, interval;
+
+  elements = {
+    25,
+    465,
+    587,
+    993,
+    995,
+  };
+};
+
+set ports_quic {
+  type inet_service;
+  flags constant, interval;
+
+  elements = {
+    80,
+    443,
+  };
+};
+
+set ports_web {
+  type inet_service;
+  flags constant, interval;
+
+  elements = {
+    80,
+    443,
+  };
+};

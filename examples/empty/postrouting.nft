@@ -1,0 +1,5 @@
+chain postrouting {
+    type filter hook postrouting priority -150;
+    policy accept;
+
+}

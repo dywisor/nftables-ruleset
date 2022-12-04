@@ -1,0 +1,4 @@
+chain nat_postrouting {
+    type nat hook postrouting priority 100;
+    policy accept;
+}

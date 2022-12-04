@@ -1,0 +1,12 @@
+# allow DHCPv4 client / server
+# FIXME: well-known dst IPs?
+
+# global_dhcp_client : from client to server (usually: output chain) 
+chain global_dhcp_c2s {
+    ip protocol udp udp sport bootpc udp dport bootps accept;
+}
+
+# global_dhcp_server : from server to client (usually: input chain)
+chain global_dhcp_s2c {
+    ip protocol udp udp sport bootps udp dport bootpc accept;
+}

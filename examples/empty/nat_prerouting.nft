@@ -1,0 +1,4 @@
+chain nat_prerouting {
+    type nat hook prerouting priority -100;
+    policy accept;
+}

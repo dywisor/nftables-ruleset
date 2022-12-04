@@ -1,0 +1,7 @@
+chain nat_prerouting {
+    type nat hook prerouting priority -100;
+    policy accept;
+
+    #> interface-based lookup table
+    iifname vmap @autogen_nat_prerouting_jump_table;
+}

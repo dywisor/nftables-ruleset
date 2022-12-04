@@ -1,0 +1,4 @@
+# nat_postrouting: @@NAME@@
+chain nat_postrouting_@@NAME@@ {
+    ;
+}

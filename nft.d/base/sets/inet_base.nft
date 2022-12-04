@@ -1,0 +1,50 @@
+# basic IPv4 IP/network sets
+
+set net4_doc {
+  type ipv4_addr;
+  flags constant, interval;
+
+  elements = {
+    192.0.2.0/24,
+    198.51.100.0/24,
+    203.0.113.0/24
+  };
+};
+
+set net4_link_local {
+  type ipv4_addr;
+  flags constant, interval;
+
+  elements = {
+    169.254.0.0/16
+  };
+};
+
+set net4_loopback {
+  type ipv4_addr;
+  flags constant, interval;
+
+  elements = {
+    127.0.0.0/8
+  };
+};
+
+set net4_multicast {
+  type ipv4_addr;
+  flags constant, interval;
+
+  elements = {
+    224.0.0.0/4
+  };
+};
+
+set net4_rfc1918 {
+  type ipv4_addr;
+  flags constant, interval;
+
+  elements = {
+    10.0.0.0/8,
+    172.16.0.0/12,
+    192.168.0.0/16,
+  };
+};

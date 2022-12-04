@@ -1,0 +1,94 @@
+# basic IPv6 IP/network sets
+
+set net6_all_dhcp_servers {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    ff02::1:2/128,
+  };
+};
+
+set net6_all_nodes {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    ff02::1/128,
+  };
+};
+
+set net6_all_routers {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    ff02::2/128,
+  };
+};
+
+set net6_doc {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    2001:db8::/32
+  };
+};
+
+set net6_dst_gw {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    fe80::/10,
+    ff02::1/128,
+    ff02::2/128,
+    ff02::1:ff00:0/104,
+  };
+};
+
+set net6_link_local {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    fe80::/10,
+  };
+};
+
+set net6_loopback {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    ::1/128
+  };
+};
+
+set net6_ndp {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    ff02::1:ff00:0/104,
+  };
+};
+
+set net6_multicast {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    ff00::/8
+  };
+};
+
+set net6_ula {
+  type ipv6_addr;
+  flags constant, interval;
+
+  elements = {
+    fc00::/7,
+  };
+};

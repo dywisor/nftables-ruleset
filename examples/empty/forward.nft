@@ -1,0 +1,19 @@
+chain forward {
+    type filter hook forward priority 0;
+    policy drop;
+
+    jump global_stateful;
+    ## ip protocol icmp jump global_icmp_forward;
+    ## ip6 nexthdr icmpv6 jump global_icmpv6_forward;
+
+    #> CLEANUP
+    ## ##> log new connections before reject
+    ## ct state new log level warn prefix "reject-forward: ";
+    ## ip protocol tcp reject with tcp reset;
+    ## ip6 nexthdr tcp reject with tcp reset;
+    ## reject;
+
+    ##> log new connections before drop
+    ct state new log level warn prefix "drop-forward: ";
+    drop;
+}

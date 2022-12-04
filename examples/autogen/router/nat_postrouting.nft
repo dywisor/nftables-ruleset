@@ -1,0 +1,7 @@
+chain nat_postrouting {
+    type nat hook postrouting priority 100;
+    policy accept;
+
+    #> interface-based lookup table
+    oifname vmap @autogen_nat_postrouting_jump_table;
+}
