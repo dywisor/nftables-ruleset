@@ -969,7 +969,7 @@ def gen_fwrules_forward_table(fw_config):
 
         yield '# forward zones jump table (output iface => chain)'
         yield f'#   use with: oifname vmap @{set_name};'
-        yield f'set {set_name} {{'
+        yield f'map {set_name} {{'
         yield '    type ifname : verdict;'
 
         if fw_config.zones_forward_combo:
@@ -997,7 +997,7 @@ def gen_fwrules_forward_table(fw_config):
 
         yield '# forward zones jump table (input iface X output iface => chain)'
         yield f'#   use with: iifname . oifname vmap @{set_name};'
-        yield f'set {set_name} {{'
+        yield f'map {set_name} {{'
         yield '    type ifname . ifname : verdict;'
 
         if fw_config.zones_forward_combo:
@@ -1040,7 +1040,7 @@ def gen_fwrules_generic_zones_lookup_table(fw_config, lookup_type, kw_match):
 
     yield f'# {lookup_type} zones jump table (iface => chain)'
     yield f'#   use with: {kw_match} vmap @{set_name};'
-    yield f'set {set_name} {{'
+    yield f'map {set_name} {{'
     yield '    type ifname : verdict;'
 
     if fw_config.interfaces:  # all zones empty if no interfaces configured
@@ -1075,7 +1075,7 @@ def gen_fwrules_generic_interfaces_lookup_table(fw_config, lookup_type, kw_match
 
     yield f'# {lookup_type} zones jump table (iface => chain)'
     yield f'#   use with: {kw_match} vmap @{set_name};'
-    yield f'set {set_name} {{'
+    yield f'map {set_name} {{'
     yield '    type ifname : verdict;'
 
     if fw_config.interfaces:  # all zones empty if no interfaces configured
