@@ -3,5 +3,5 @@ chain postrouting {
     policy accept;
 
     #> interface-based lookup table
-    oifname vmap @autogen_nat_postrouting_jump_table;
+    oifname vmap @autogen_postrouting_jump_table;
 }

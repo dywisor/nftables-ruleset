@@ -9,5 +9,5 @@ chain prerouting {
     jump autogen_prerouting_antispoof;
 
     #> interface-based lookup table
-    iifname vmap @autogen_nat_prerouting_jump_table;
+    iifname vmap @autogen_prerouting_jump_table;
 }
