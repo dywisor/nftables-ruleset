@@ -922,7 +922,7 @@ def gen_fwrules_antispoof(fw_config):
             if oth_ip4_list:
                 yield (
                     '    iifname {iface} \\\n'
-                    '      ip4 saddr {ip_set} \\\n'
+                    '      ip saddr {ip_set} \\\n'
                     '      counter drop comment "antispoof on {iface}";'
                 ).format(
                     iface=ia.name,
