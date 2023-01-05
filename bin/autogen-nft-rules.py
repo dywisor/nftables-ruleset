@@ -178,23 +178,33 @@ class InterfaceDef:
     zone            : ZoneDef
     zone_ref        : str
 
-    cluster_ip4     : ipaddress.IPv4Interface
-    primary_ip4     : ipaddress.IPv4Interface
-    fallback_ip4    : ipaddress.IPv4Interface
+    cluster_ip4     : list[ipaddress.IPv4Interface]
+    primary_ip4     : list[ipaddress.IPv4Interface]
+    fallback_ip4    : list[ipaddress.IPv4Interface]
     nat_ip4         : list[ipaddress.IPv4Interface]
     routes_ip4      : dict[ipaddress.IPv4Network, ipaddress.IPv4Address]
 
-    cluster_ip6     : ipaddress.IPv6Interface
-    primary_ip6     : ipaddress.IPv6Interface
-    fallback_ip6    : ipaddress.IPv6Interface
+    cluster_ip6     : list[ipaddress.IPv6Interface]
+    primary_ip6     : list[ipaddress.IPv6Interface]
+    fallback_ip6    : list[ipaddress.IPv6Interface]
     nat_ip6         : list[ipaddress.IPv6Interface]
     routes_ip6      : dict[ipaddress.IPv6Network, ipaddress.IPv6Address]
 
     def get_ip4(self, is_primary):
-        return (self.primary_ip4 if is_primary else self.fallback_ip4)
+        ip_list = (self.primary_ip4 if is_primary else self.fallback_ip4)
+        try:
+            return ip_list[0]
+        except IndexError:
+            return None
+    # --- end of get_ip4 (...) ---
 
     def get_ip6(self, is_primary):
-        return (self.primary_ip6 if is_primary else self.fallback_ip6)
+        ip_list = (self.primary_ip6 if is_primary else self.fallback_ip6)
+        try:
+            return ip_list[0]
+        except IndexError:
+            return None
+    # --- end of get_ip6 (...) ---
 
     def _iter_ip(self, ip_link_local, ip_list):
         for ip_obj in ip_list:
@@ -205,11 +215,11 @@ class InterfaceDef:
     def iter_all_ip4(self):
         return self._iter_ip(
             IP4_LINK_LOCAL,
-            [
+            itertools.chain(
                 self.cluster_ip4,
                 self.primary_ip4,
                 self.fallback_ip4,
-            ]
+            )
         )
     # --- end of iter_all_ip4 (...) ---
 
@@ -220,7 +230,10 @@ class InterfaceDef:
     def iter_node_ip4(self):
         return self._iter_ip(
             IP4_LINK_LOCAL,
-            [self.primary_ip4, self.fallback_ip4]
+            itertools.chain(
+                self.primary_ip4,
+                self.fallback_ip4,
+            )
         )
     # --- end of iter_node_ip4 (...) ---
 
@@ -231,11 +244,11 @@ class InterfaceDef:
     def iter_all_ip6(self):
         return self._iter_ip(
             IP6_LINK_LOCAL,
-            [
+            itertools.chain(
                 self.cluster_ip6,
                 self.primary_ip6,
                 self.fallback_ip6,
-            ]
+            )
         )
     # --- end of iter_all_ip6 (...) ---
 
@@ -246,7 +259,10 @@ class InterfaceDef:
     def iter_node_ip6(self):
         return self._iter_ip(
             IP6_LINK_LOCAL,
-            [self.primary_ip6, self.fallback_ip6]
+            itertools.chain(
+                self.primary_ip6,
+                self.fallback_ip6,
+            )
         )
     # --- end of iter_node_ip6 (...) ---
 
@@ -442,12 +458,15 @@ def dict_namesort(d):
 
 
 def load_config(filepath):
+    is_listlike     = lambda a: (not isinstance(a, str) and (hasattr(a, '__iter__') or hasattr(a, '__next__')))
+    listify         = lambda a: (list(a) if is_listlike(a) else [a])
+
     mkobj           = lambda cls, a: (cls(a) if a is not None else None)
     mkobj_bool      = lambda a, b: (a if a is not None else b)
     mkobj_ip4       = functools.partial(mkobj, ipaddress.IPv4Interface)
     mkobj_ip6       = functools.partial(mkobj, ipaddress.IPv6Interface)
 
-    mkobj_list      = lambda cls, av: ([cls(a) for a in av] if av is not None else [])
+    mkobj_list      = lambda cls, av: ([cls(a) for a in listify(av)] if av is not None else [])
     mkobj_list_ip4  = functools.partial(mkobj_list, ipaddress.IPv4Interface)
     mkobj_list_ip6  = functools.partial(mkobj_list, ipaddress.IPv6Interface)
 
@@ -548,15 +567,15 @@ def load_config(filepath):
                     zone            = None,
                     zone_ref        = (yiface.get('zone') or norm_name),
 
-                    cluster_ip4     = mkobj_ip4(yiface.get('cluster_ip4')),
-                    primary_ip4     = mkobj_ip4(yiface.get('primary_ip4')),
-                    fallback_ip4    = mkobj_ip4(yiface.get('fallback_ip4')),
+                    cluster_ip4     = mkobj_list_ip4(yiface.get('cluster_ip4')),
+                    primary_ip4     = mkobj_list_ip4(yiface.get('primary_ip4')),
+                    fallback_ip4    = mkobj_list_ip4(yiface.get('fallback_ip4')),
                     nat_ip4         = mkobj_list_ip4(yiface.get('nat_ip4')),
                     routes_ip4      = mkobj_dict_routes_ip4(yiface.get('routes_ip4')),
 
-                    cluster_ip6     = mkobj_ip6(yiface.get('cluster_ip6')),
-                    primary_ip6     = mkobj_ip6(yiface.get('primary_ip6')),
-                    fallback_ip6    = mkobj_ip6(yiface.get('fallback_ip6')),
+                    cluster_ip6     = mkobj_list_ip6(yiface.get('cluster_ip6')),
+                    primary_ip6     = mkobj_list_ip6(yiface.get('primary_ip6')),
+                    fallback_ip6    = mkobj_list_ip6(yiface.get('fallback_ip6')),
                     nat_ip6         = mkobj_list_ip6(yiface.get('nat_ip6')),
                     routes_ip6      = mkobj_dict_routes_ip6(yiface.get('routes_ip6')),
                 )
