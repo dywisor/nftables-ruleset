@@ -18,6 +18,7 @@ import re
 import sys
 
 # import dataclasses
+from typing import Optional
 from dataclasses import dataclass, field
 
 import yaml
