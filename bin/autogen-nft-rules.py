@@ -462,10 +462,10 @@ def load_config(filepath):
     is_listlike     = lambda a: (not isinstance(a, str) and (hasattr(a, '__iter__') or hasattr(a, '__next__')))
     listify         = lambda a: (list(a) if is_listlike(a) else [a])
 
-    mkobj           = lambda cls, a: (cls(a) if a is not None else None)
+    #mkobj           = lambda cls, a: (cls(a) if a is not None else None)
     mkobj_bool      = lambda a, b: (a if a is not None else b)
-    mkobj_ip4       = functools.partial(mkobj, ipaddress.IPv4Interface)
-    mkobj_ip6       = functools.partial(mkobj, ipaddress.IPv6Interface)
+    #mkobj_ip4       = functools.partial(mkobj, ipaddress.IPv4Interface)
+    #mkobj_ip6       = functools.partial(mkobj, ipaddress.IPv6Interface)
 
     mkobj_list      = lambda cls, av: ([cls(a) for a in listify(av)] if av is not None else [])
     mkobj_list_ip4  = functools.partial(mkobj_list, ipaddress.IPv4Interface)
