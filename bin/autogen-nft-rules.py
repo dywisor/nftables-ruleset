@@ -756,6 +756,16 @@ def get_argument_parser(prog):
 # --- end of get_argument_parser (...) ---
 
 
+def idedup(items):
+    seen = set()
+
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            yield item
+# --- end of idedup (...) ---
+
+
 def gen_nft_set(name, set_type, items=None, *, flags=None, quote_value=True):
     ii = 4 * ' '
 
@@ -770,10 +780,10 @@ def gen_nft_set(name, set_type, items=None, *, flags=None, quote_value=True):
         yield f'{ii}elements = {{'
 
         if quote_value:
-            for item in items:
+            for item in idedup(items):
                 yield f'{ii}{ii}"{item!s}",'
         else:
-            for item in items:
+            for item in idedup(items):
                 yield f'{ii}{ii}{item!s},'
         # -- quote or not
         yield f'{ii}}};'
