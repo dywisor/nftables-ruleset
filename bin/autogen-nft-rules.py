@@ -51,11 +51,13 @@ class ZoneClassification(enum.IntEnum):
         EXTERNAL,
         DMZ,
         VPN,
+        VPN_CLIENT,
+        VPN_S2S,
         FWSYNC,
 
         # virtual classifications (not configurable)
         LOCAL_SITE,
-    ) = range(7)
+    ) = range(9)
 # --- end of ZoneClassification ---
 
 
@@ -525,6 +527,12 @@ def load_config(filepath):
 
             elif ytype_norm in {'vpn'}:
                 return ZoneClassification.VPN
+
+            elif ytype_norm in {'vpn_client'}:
+                return ZoneClassification.VPN_CLIENT
+
+            elif ytype_norm in {'vpn_s2s'}:
+                return ZoneClassification.VPN_S2S
 
             elif ytype_norm in {'fwsync'}:
                 return ZoneClassification.FWSYNC
