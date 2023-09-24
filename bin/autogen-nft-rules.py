@@ -825,16 +825,21 @@ def gen_fwrules_base_sets(fw_config):
         for zclass in ZoneClassification
     }
 
+    zclass_used = set()
+
     for zone in fw_config.zones.iter_zones():
+        zclass_used.add(zone.classification)
         zclass_map[zone.classification].add_zone(zone)
 
         # add to virtual classifications
         if zone.classification in zclass_set_local_site:
             zclass_map[ZoneClassification.LOCAL_SITE].add_zone(zone)
+            zclass_used.add(ZoneClassification.LOCAL_SITE)
     # --
 
     # by zone classification: interfaces, networks
-    for zclass, zones in sorted(zclass_map.items(), key=lambda kv: kv[0]):
+    zclass_map_used = {k: v for k,v in zclass_map.items() if k in zclass_used}
+    for zclass, zones in sorted(zclass_map_used.items(), key=lambda kv: kv[0]):
         zclass_name = zclass.name.lower()
         iface_list = [iface.name for iface in zones.iter_interfaces()]
 
