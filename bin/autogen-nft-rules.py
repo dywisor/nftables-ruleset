@@ -941,7 +941,7 @@ def gen_fwrules_antispoof(fw_config):
 
         if idx_last_ip < 1:
             return '{{{ip_set}}}'.format(
-                ip_set=', '.join(map(str, oth_ip6_list))
+                ip_set=', '.join(map(str, ip_list))
             )
 
         else:
