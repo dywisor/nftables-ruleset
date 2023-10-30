@@ -460,7 +460,7 @@ def dict_namesort(d):
 # --- end of dict_namesort (...) ---
 
 
-def load_config(filepath):
+def load_config(filepaths):
     is_listlike     = lambda a: (not isinstance(a, str) and (hasattr(a, '__iter__') or hasattr(a, '__next__')))
     listify         = lambda a: (list(a) if is_listlike(a) else [a])
 
@@ -472,6 +472,51 @@ def load_config(filepath):
     mkobj_list      = lambda cls, av: ([cls(a) for a in listify(av)] if av is not None else [])
     mkobj_list_ip4  = functools.partial(mkobj_list, ipaddress.IPv4Interface)
     mkobj_list_ip6  = functools.partial(mkobj_list, ipaddress.IPv6Interface)
+
+    def read_config_files(filepaths):
+        def merge_yaml_config(merged_config, new_config, *, source=None):
+            # strategy: merge dictionaries up to depth 1 (inclusive),
+            #           replace all other items
+            for key, new_value in new_config.items():
+                if new_value is not None:
+                    try:
+                        existing = merged_config[key]
+
+                    except KeyError:
+                        merged_config[key] = new_value
+
+                    else:
+                        if isinstance(existing, dict):
+                            if isinstance(new_value, dict):
+                                # >> merge dictionaries (at depth 1)
+                                existing.update(new_value)
+                            else:
+                                raise TypeError(source, key, new_value)
+
+                        elif isinstance(new_value, dict):
+                            raise TypeError(source, key, new_value)
+
+                        else:
+                            # >> replace all other items
+                            merged_config[key] = new_value
+                    # -- end try
+                # -- end if
+            # -- end for
+        # --- end of merge_yaml_config (...) ---
+
+        yaml_config = {}
+
+        for filepath in filepaths:
+            with open(filepath, 'rt') as fh:
+                file_yaml_config = yaml.safe_load(fh)
+
+                if file_yaml_config:
+                    merge_yaml_config(yaml_config, file_yaml_config)
+            # -- end with
+        # -- end for
+
+        return yaml_config
+    # --- end of read_config_files (...) ---
 
     def mkobj_dict_routes(cls_net, cls_addr, yroutes):
         if yroutes:
@@ -594,9 +639,7 @@ def load_config(filepath):
         # -- end for
     # --- end of load_config_interfaces (...) ---
 
-    with open(filepath, 'rt') as fh:
-        yaml_config = yaml.safe_load(fh)
-    # -- end with
+    yaml_config = read_config_files(filepaths)
 
     fw_config = FirewallConfig()
 
@@ -745,7 +788,8 @@ def get_argument_parser(prog):
 
     arg_parser.add_argument(
         "config",
-        help="path to the configuration file"
+        nargs="+",
+        help="path to the configuration file(s)"
     )
 
     arg_parser.add_argument(
