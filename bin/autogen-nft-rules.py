@@ -496,6 +496,13 @@ class FilterChainTemplate(object):
 # --- end of FilterChainTemplate ---
 
 
+@dataclass
+class RuntimeConfig:
+    template_dirs   : Optional[SearchDirs] = field(default=None)
+    outdir          : Optional[pathlib.Path] = field(default=None)
+# --- end of RuntimeConfig ---
+
+
 def normalize_name(iface_name):
     return RE_NAME_STRIP_NORMALIZE.sub(
         '',
@@ -1292,9 +1299,9 @@ def open_write_text_file(filepath, overwrite=False):
 # --- end of open_write_text_file (...) ---
 
 
-def load_filter_chain_template(template_dirs, template_name):
+def load_filter_chain_template(config, template_name):
 
-    with template_dirs.open(f'{template_name}.nft.in', 'rt') as fh:
+    with config.template_dirs.open(f'{template_name}.nft.in', 'rt') as fh:
         template_data = fh.read().rstrip()
     # -- end with
 
@@ -1303,15 +1310,17 @@ def load_filter_chain_template(template_dirs, template_name):
 
 
 def main(prog, argv):
-    arg_parser   = get_argument_parser(prog)
-    arg_config   = arg_parser.parse_args(argv)
-    outdir       = pathlib.Path(arg_config.output_dir)
+    arg_parser  = get_argument_parser(prog)
+    arg_config  = arg_parser.parse_args(argv)
 
-    template_dirs = SearchDirs((
-        reversed(arg_config.template_dirs)
-        if arg_config.template_dirs
-        else [os.path.join(os.getcwd(), 'templates')]
-    ))
+    config      = RuntimeConfig(
+        outdir          = pathlib.Path(arg_config.output_dir),
+        template_dirs   = SearchDirs((
+            reversed(arg_config.template_dirs)
+            if arg_config.template_dirs
+            else [os.path.join(os.getcwd(), 'templates')]
+        )),
+    )
 
     fw_config = load_fw_config(arg_config.config)
 
@@ -1386,7 +1395,7 @@ def main(prog, argv):
     ]:
         for filter_chain in filter_chains:
             filter_chain_template = None
-            filter_chain_outdir = outdir / filter_chain
+            filter_chain_outdir = config.outdir / filter_chain
 
             os.makedirs(filter_chain_outdir, exist_ok=True)
 
@@ -1399,7 +1408,7 @@ def main(prog, argv):
                         try:
                             if filter_chain_template is None:
                                 filter_chain_template = load_filter_chain_template(
-                                    template_dirs, filter_chain
+                                    config, filter_chain
                                 )
                             # --
 
@@ -1417,7 +1426,7 @@ def main(prog, argv):
         # -- end for filter_chain, ...
     # -- end for filter_chains, ...
 
-    autogen_rules_outdir = outdir / 'gen' / 'global'
+    autogen_rules_outdir = config.outdir / 'gen' / 'global'
     autogen_rules_outfile = autogen_rules_outdir / 'autogen.nft'
 
     os.makedirs(autogen_rules_outdir, exist_ok=True)
