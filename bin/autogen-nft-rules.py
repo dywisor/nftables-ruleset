@@ -575,7 +575,11 @@ def dict_namesort(d):
 def load_runtime_config(arg_config):
     config = RuntimeConfig()
 
-    config.fw_config_files = arg_config.config
+    if arg_config.config:
+        config.fw_config_files = arg_config.config
+    else:
+        raise ValueError("no config files specified")
+    # --
 
     if arg_config.output_dir:
         config.outdir = pathlib.Path(arg_config.output_dir)
@@ -927,7 +931,7 @@ def get_argument_parser(prog):
 
     arg_parser.add_argument(
         "config",
-        nargs="+",
+        nargs="*",
         help="path to the configuration file(s)"
     )
 
