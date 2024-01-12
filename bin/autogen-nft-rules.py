@@ -545,6 +545,16 @@ class RuntimeConfig:
     template_dirs   : Optional[SearchDirs] = field(default=None)
     outdir          : Optional[pathlib.Path] = field(default=None)
     autogen_items   : Optional[AutogenItemTypes] = field(default=None)
+
+    def load_filter_chain_template(self, template_name):
+
+        with self.template_dirs.open(f'{template_name}.nft.in', 'rt') as fh:
+            template_data = fh.read().rstrip()
+        # -- end with
+
+        return FilterChainTemplate(template_name, template_data)
+    # --- end of load_filter_chain_template (...) ---
+
 # --- end of RuntimeConfig ---
 
 
@@ -1377,16 +1387,6 @@ def open_write_text_file(filepath, overwrite=False):
 # --- end of open_write_text_file (...) ---
 
 
-def load_filter_chain_template(config, template_name):
-
-    with config.template_dirs.open(f'{template_name}.nft.in', 'rt') as fh:
-        template_data = fh.read().rstrip()
-    # -- end with
-
-    return FilterChainTemplate(template_name, template_data)
-# --- end of load_filter_chain_template (...) ---
-
-
 def main(prog, argv):
     arg_parser  = get_argument_parser(prog)
     arg_config  = arg_parser.parse_args(argv)
@@ -1480,9 +1480,7 @@ def main(prog, argv):
                         print("NEW", outfile)
                         try:
                             if filter_chain_template is None:
-                                filter_chain_template = load_filter_chain_template(
-                                    config, filter_chain
-                                )
+                                filter_chain_template = config.load_filter_chain_template(filter_chain)
                             # --
 
                             fh.write(filter_chain_template.render(name) + "\n")
