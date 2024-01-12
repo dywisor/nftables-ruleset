@@ -509,7 +509,7 @@ def dict_namesort(d):
 # --- end of dict_namesort (...) ---
 
 
-def load_config(filepaths):
+def load_fw_config(filepaths):
     is_listlike     = lambda a: (not isinstance(a, str) and (hasattr(a, '__iter__') or hasattr(a, '__next__')))
     listify         = lambda a: (list(a) if is_listlike(a) else [a])
 
@@ -762,7 +762,7 @@ def load_config(filepaths):
     # --
 
     return fw_config
-# --- end of load_config (...) ---
+# --- end of load_fw_config (...) ---
 
 
 def gen_interface_combinations(fw_config, *, filter_src=None, filter_oth=None):
@@ -1313,7 +1313,7 @@ def main(prog, argv):
         else [os.path.join(os.getcwd(), 'templates')]
     ))
 
-    fw_config = load_config(arg_config.config)
+    fw_config = load_fw_config(arg_config.config)
 
     filter_match_kw = {
         'input'             : 'iifname',
