@@ -516,6 +516,25 @@ def dict_namesort(d):
 # --- end of dict_namesort (...) ---
 
 
+def load_runtime_config(arg_config):
+    config = RuntimeConfig()
+
+    if arg_config.output_dir:
+        config.outdir = pathlib.Path(arg_config.output_dir)
+    else:
+        raise ValueError(arg_config.output_dir)
+    # --
+
+    if arg_config.template_dirs:
+        config.template_dirs = SearchDirs(reversed(arg_config.template_dirs))
+    else:
+        config.template_dirs = SearchDirs([os.path.join(os.getcwd(), 'templates')])
+    # --
+
+    return config
+# --- end of load_runtime_config (...) ---
+
+
 def load_fw_config(filepaths):
     is_listlike     = lambda a: (not isinstance(a, str) and (hasattr(a, '__iter__') or hasattr(a, '__next__')))
     listify         = lambda a: (list(a) if is_listlike(a) else [a])
@@ -1313,16 +1332,8 @@ def main(prog, argv):
     arg_parser  = get_argument_parser(prog)
     arg_config  = arg_parser.parse_args(argv)
 
-    config      = RuntimeConfig(
-        outdir          = pathlib.Path(arg_config.output_dir),
-        template_dirs   = SearchDirs((
-            reversed(arg_config.template_dirs)
-            if arg_config.template_dirs
-            else [os.path.join(os.getcwd(), 'templates')]
-        )),
-    )
-
-    fw_config = load_fw_config(arg_config.config)
+    config      = load_runtime_config(arg_config)
+    fw_config   = load_fw_config(arg_config.config)
 
     filter_match_kw = {
         'input'             : 'iifname',
