@@ -489,6 +489,14 @@ class SearchDirs(object):
             yield (search_dir / filename)
     # --- end of gen_file_candidates (...) ---
 
+    def get_filepath(self, filename):
+        for filepath in self.gen_file_candidates(filename):
+            if filepath.is_file():
+                return filepath
+
+        raise FileNotFoundError(filename)
+    # --- end of get_filepath (...) ---
+
     @contextlib.contextmanager
     def open(self, filename, *args, **kwargs):
         fh = None
