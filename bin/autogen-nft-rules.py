@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import collections.abc
 import contextlib
 import enum
@@ -459,8 +460,18 @@ class SearchDirs(object):
 
     def __init__(self, search_dirs):
         super().__init__()
-        self.search_dirs = [pathlib.Path(p) for p in search_dirs]
+        self.search_dirs = collections.deque((pathlib.Path(p) for p in search_dirs))
     # --- end of __init__ (...) ---
+
+    def add_search_dirs(self, search_dirs, *, top=True):
+        if top:
+            fn_append = self.search_dirs.appendleft
+        else:
+            fn_append = self.search_dirs.append
+
+        for search_dir in search_dirs:
+            fn_append(search_dir)
+    # --- end of add_search_dirs (...) ---
 
     def gen_file_candidates(self, filename):
         if not filename:
