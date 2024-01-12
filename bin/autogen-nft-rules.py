@@ -1143,8 +1143,7 @@ def get_argument_parser(prog):
     arg_parser.add_argument(
         '-C', '--nft-config-root',
         dest='nft_config_root',
-        required=True,
-        default=None,
+        default='/etc/nft.d',
         help='nft configuration root directory (needed for some layouts)'
     )
 
