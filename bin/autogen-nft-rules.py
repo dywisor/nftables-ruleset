@@ -410,6 +410,55 @@ class FirewallConfig:
 # --- end of FirewallConfig ---
 
 
+class SearchDirs(object):
+    __slots__ = ['search_dirs']
+
+    def __init__(self, search_dirs):
+        super().__init__()
+        self.search_dirs = [pathlib.Path(p) for p in search_dirs]
+    # --- end of __init__ (...) ---
+
+    def gen_file_candidates(self, filename):
+        if not filename:
+            raise ValueError(filename)
+
+        filename = pathlib.Path(filename)
+        if filename.is_absolute():
+            raise ValueError(filename)
+
+        for search_dir in self.search_dirs:
+            yield (search_dir / filename)
+    # --- end of gen_file_candidates (...) ---
+
+    @contextlib.contextmanager
+    def open(self, filename, *args, **kwargs):
+        fh = None
+
+        try:
+            for filepath in self.gen_file_candidates(filename):
+                try:
+                    fh = open(filepath, *args, **kwargs)
+
+                except FileNotFoundError:
+                    pass
+
+                else:
+                    break
+            # -- end for
+
+            if fh is None:
+                raise FileNotFoundError(filename)
+
+            yield fh
+
+        finally:
+            if fh is not None:
+                fh.close()
+    # --- end of open (...) ---
+
+# --- end of SearchDirs ---
+
+
 class FilterChainTemplate(object):
     __slots__ = ['name', 'template']
 
@@ -801,7 +850,8 @@ def get_argument_parser(prog):
 
     arg_parser.add_argument(
         '-T', '--templates',
-        dest='template_dir',
+        dest='template_dirs',
+        default=[], action='append',
         help='templates directory'
     )
 
@@ -1242,10 +1292,9 @@ def open_write_text_file(filepath, overwrite=False):
 # --- end of open_write_text_file (...) ---
 
 
-def load_filter_chain_template(template_dir, template_name):
-    template_file = template_dir / f'{template_name}.nft.in'
+def load_filter_chain_template(template_dirs, template_name):
 
-    with open(template_file, 'rt') as fh:
+    with template_dirs.open(f'{template_name}.nft.in', 'rt') as fh:
         template_data = fh.read().rstrip()
     # -- end with
 
@@ -1257,10 +1306,12 @@ def main(prog, argv):
     arg_parser   = get_argument_parser(prog)
     arg_config   = arg_parser.parse_args(argv)
     outdir       = pathlib.Path(arg_config.output_dir)
-    template_dir = pathlib.Path(
-        arg_config.template_dir
-        or os.path.join(os.getcwd(), 'templates')
-    )
+
+    template_dirs = SearchDirs((
+        reversed(arg_config.template_dirs)
+        if arg_config.template_dirs
+        else [os.path.join(os.getcwd(), 'templates')]
+    ))
 
     fw_config = load_config(arg_config.config)
 
@@ -1348,7 +1399,7 @@ def main(prog, argv):
                         try:
                             if filter_chain_template is None:
                                 filter_chain_template = load_filter_chain_template(
-                                    template_dir, filter_chain
+                                    template_dirs, filter_chain
                                 )
                             # --
 
