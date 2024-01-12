@@ -617,6 +617,11 @@ class AbstractRuntimeConfigLayout(object, metaclass=abc.ABCMeta):
         self.nft_config_root = nft_config_root
     # ---
 
+    # outdir has no "default", only "fallback"
+    @abc.abstractmethod
+    def get_fallback_outdir(self):
+        return None
+
     def get_default_fw_config_files(self):
         return []
 
@@ -645,6 +650,10 @@ class AbstractRuntimeConfigLayout(object, metaclass=abc.ABCMeta):
 
 
 class RuntimeConfigLayoutNone(AbstractRuntimeConfigLayout):
+
+    def get_fallback_outdir(self):
+        return self.nft_config_root
+    # ---
 
     def get_fallback_template_dirs(self):
         return [os.path.join(os.getcwd(), 'templates')]
@@ -707,6 +716,10 @@ class RuntimeConfigLayoutNFTX(AbstractRuntimeConfigLayout):
         self.nftx_config_files = nftx_config_files
     # --- end of scan_nftx (...) ---
 
+    def get_fallback_outdir(self):
+        return (self.nftx_root / 'node')
+    # --- end of get_fallback_outdir (...) ---
+
     def get_default_fw_config_files(self):
         return list(self.nftx_config_files)
 
@@ -748,19 +761,19 @@ def load_runtime_config(arg_config):
 
     config = RuntimeConfig()
 
-    if arg_config.output_dir:
-        config.outdir = pathlib.Path(arg_config.output_dir)
-    else:
-        raise ValueError(arg_config.output_dir)
-    # --
-
     if arg_config.nft_config_root:
         config.nft_config_root = pathlib.Path(arg_config.nft_config_root)
     else:
-        config.nft_config_root = config.outdir
+        raise ValueError(arg_config.nft_config_root)
     # --
 
     config_layout = config_layout_cls(nft_config_root=config.nft_config_root)
+
+    if arg_config.output_dir:
+        config.outdir = pathlib.Path(arg_config.output_dir)
+    else:
+        config.outdir = config_layout.get_fallback_outdir()
+    # --
 
     config.fw_config_files = (
         config_layout.get_default_fw_config_files()
@@ -1128,9 +1141,16 @@ def get_argument_parser(prog):
     )
 
     arg_parser.add_argument(
+        '-C', '--nft-config-root',
+        dest='nft_config_root',
+        required=True,
+        default=None,
+        help='nft configuration root directory (needed for some layouts)'
+    )
+
+    arg_parser.add_argument(
         '-O', '--output',
         dest='output_dir',
-        required=True,
         help='output directory'
     )
 
@@ -1155,13 +1175,6 @@ def get_argument_parser(prog):
         default='none',
         choices=sorted(NFT_CONFIG_LAYOUTS),
         help="nft configuration struct layout (default: %(default)s)"
-    )
-
-    arg_parser.add_argument(
-        '-C', '--nft-config-root',
-        dest='nft_config_root',
-        default=None,
-        help='nft configuration root directory (needed for some layouts)'
     )
 
     return arg_parser
