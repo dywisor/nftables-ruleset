@@ -545,6 +545,7 @@ class RuntimeConfig:
     template_dirs   : Optional[SearchDirs] = field(default=None)
     outdir          : Optional[pathlib.Path] = field(default=None)
     autogen_items   : Optional[AutogenItemTypes] = field(default=None)
+    fw_config_files : Optional[list[str]] = field(default=None)
 
     def load_filter_chain_template(self, template_name):
 
@@ -573,6 +574,8 @@ def dict_namesort(d):
 
 def load_runtime_config(arg_config):
     config = RuntimeConfig()
+
+    config.fw_config_files = arg_config.config
 
     if arg_config.output_dir:
         config.outdir = pathlib.Path(arg_config.output_dir)
@@ -1392,7 +1395,7 @@ def main(prog, argv):
     arg_config  = arg_parser.parse_args(argv)
 
     config      = load_runtime_config(arg_config)
-    fw_config   = load_fw_config(arg_config.config)
+    fw_config   = load_fw_config(config.fw_config_files)
 
     filter_match_kw = {
         'input'             : 'iifname',
