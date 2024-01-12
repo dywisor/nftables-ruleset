@@ -559,6 +559,7 @@ class FilterChainTemplate(object):
 class RuntimeConfig:
     template_dirs   : Optional[SearchDirs] = field(default=None)
     outdir          : Optional[pathlib.Path] = field(default=None)
+    nft_config_root : Optional[pathlib.Path] = field(default=None)
     autogen_items   : Optional[AutogenItemTypes] = field(default=None)
     fw_config_files : Optional[list[str]] = field(default=None)
 
@@ -588,6 +589,11 @@ def dict_namesort(d):
 
 
 class AbstractRuntimeConfigLayout(object, metaclass=abc.ABCMeta):
+
+    def __init__(self, nft_config_root):
+        super().__init__()
+        self.nft_config_root = nft_config_root
+    # ---
 
     def get_default_fw_config_files(self):
         return []
@@ -630,7 +636,7 @@ NFT_CONFIG_LAYOUTS = {
 
 
 def load_runtime_config(arg_config):
-    config_layout = NFT_CONFIG_LAYOUTS[arg_config.nft_config_layout]()
+    config_layout_cls = NFT_CONFIG_LAYOUTS[arg_config.nft_config_layout]
 
     config = RuntimeConfig()
 
@@ -639,6 +645,14 @@ def load_runtime_config(arg_config):
     else:
         raise ValueError(arg_config.output_dir)
     # --
+
+    if arg_config.nft_config_root:
+        config.nft_config_root = pathlib.Path(arg_config.nft_config_root)
+    else:
+        config.nft_config_root = config.outdir
+    # --
+
+    config_layout = config_layout_cls(nft_config_root=config.nft_config_root)
 
     config.fw_config_files = (
         config_layout.get_default_fw_config_files()
@@ -1030,6 +1044,13 @@ def get_argument_parser(prog):
         default='none',
         choices=sorted(NFT_CONFIG_LAYOUTS),
         help="nft configuration struct layout (default: %(default)s)"
+    )
+
+    arg_parser.add_argument(
+        '-C', '--nft-config-root',
+        dest='nft_config_root',
+        default=None,
+        help='nft configuration root directory (needed for some layouts)'
     )
 
     return arg_parser
