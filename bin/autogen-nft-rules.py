@@ -578,11 +578,12 @@ class FilterChainTemplate(object):
 
 @dataclass
 class RuntimeConfig:
-    template_dirs   : Optional[SearchDirs] = field(default=None)
-    outdir          : Optional[pathlib.Path] = field(default=None)
-    nft_config_root : Optional[pathlib.Path] = field(default=None)
-    autogen_items   : Optional[AutogenItemTypes] = field(default=None)
-    fw_config_files : Optional[list[str]] = field(default=None)
+    template_dirs       : Optional[SearchDirs] = field(default=None)
+    outdir              : Optional[pathlib.Path] = field(default=None)
+    nft_config_root     : Optional[pathlib.Path] = field(default=None)
+    nft_fw_config_dirs  : Optional[SearchDirs] = field(default=None)
+    autogen_items       : Optional[AutogenItemTypes] = field(default=None)
+    fw_config_files     : Optional[list[str]] = field(default=None)
 
     def load_filter_chain_template(self, template_name):
 
@@ -633,6 +634,11 @@ class AbstractRuntimeConfigLayout(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_fallback_autogen_items(self):
+        return []
+
+    # fw_config_dirs has no fallback
+    # since it is not exposed directly via argparse/CLI
+    def get_default_nft_fw_config_dirs(self):
         return []
 
 # --- end of AbstractRuntimeConfigLayout ---
@@ -724,6 +730,10 @@ class RuntimeConfigLayoutNFTX(AbstractRuntimeConfigLayout):
         return (True if filter_chains is None else filter_chains)
     # --- end of get_fallback_autogen_items (...) ---
 
+    def get_default_nft_fw_config_dirs(self):
+        return list(self.nftx_search_dirs)
+    # --- end of get_default_nft_fw_config_dirs (...) ---
+
 # --- end of RuntimeConfigLayoutNFTX ---
 
 
@@ -763,6 +773,9 @@ def load_runtime_config(arg_config):
     if not config.fw_config_files:
         raise ValueError("no config files specified")
     # --
+
+    config.nft_fw_config_dirs = SearchDirs()
+    config.nft_fw_config_dirs.add_search_dirs(config_layout.get_default_nft_fw_config_dirs())
 
     config.template_dirs = SearchDirs()
     config.template_dirs.add_search_dirs(config_layout.get_default_template_dirs())
@@ -1670,30 +1683,38 @@ def main(prog, argv):
         for filter_chain in (c for c in filter_chains if c in config.autogen_items):
             filter_chain_template = None
             filter_chain_outdir = config.outdir / filter_chain
+            filter_chain_config_dirs = config.nft_fw_config_dirs.get_subdir(filter_chain)
 
             os.makedirs(filter_chain_outdir, exist_ok=True)
 
             for name in filter_names:
-                outfile = filter_chain_outdir / f'{name}.nft'
+                outfilename = f'{name}.nft'
 
-                with open_write_text_file(outfile, overwrite=False) as fh:
-                    if fh is not None:
-                        print("NEW", outfile)
-                        try:
-                            if filter_chain_template is None:
-                                filter_chain_template = config.load_filter_chain_template(filter_chain)
-                            # --
+                try:
+                    filter_chain_config_dirs.get_filepath(outfilename)
 
-                            fh.write(filter_chain_template.render(name) + "\n")
+                except FileNotFoundError:
+                    outfile = filter_chain_outdir / outfilename
 
-                        except:
-                            # clean up on error, then reraise
-                            fh.close()
-                            outfile.unlink()
-                            raise
-                        # -- end try
-                    # -- end new file?
-                # -- end with open file
+                    with open_write_text_file(outfile, overwrite=False) as fh:
+                        if fh is not None:
+                            print("NEW", outfile)
+                            try:
+                                if filter_chain_template is None:
+                                    filter_chain_template = config.load_filter_chain_template(filter_chain)
+                                # --
+
+                                fh.write(filter_chain_template.render(name) + "\n")
+
+                            except:
+                                # clean up on error, then reraise
+                                fh.close()
+                                outfile.unlink()
+                                raise
+                            # -- end try
+                        # -- end new file?
+                    # -- end with open file
+                # -- end if file exists?
             # -- end for name
         # -- end for filter_chain, ...
     # -- end for filter_chains, ...
