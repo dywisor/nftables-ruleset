@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import abc
 import argparse
 import collections
 import collections.abc
@@ -586,14 +587,52 @@ def dict_namesort(d):
 # --- end of dict_namesort (...) ---
 
 
-def load_runtime_config(arg_config):
-    config = RuntimeConfig()
+class AbstractRuntimeConfigLayout(object, metaclass=abc.ABCMeta):
 
-    if arg_config.config:
-        config.fw_config_files = arg_config.config
-    else:
-        raise ValueError("no config files specified")
-    # --
+    def get_default_fw_config_files(self):
+        return []
+
+    def get_fallback_fw_config_files(self):
+        return []
+
+    def get_default_template_dirs(self):
+        return []
+
+    def get_fallback_template_dirs(self):
+        return []
+
+    # There's no get_default_autogen_items(),
+    # using either cmdline or fallback
+
+    @abc.abstractmethod
+    def get_fallback_autogen_items(self):
+        return []
+
+# --- end of AbstractRuntimeConfigLayout ---
+
+
+class RuntimeConfigLayoutNone(AbstractRuntimeConfigLayout):
+
+    def get_fallback_template_dirs(self):
+        return [os.path.join(os.getcwd(), 'templates')]
+    # ---
+
+    def get_fallback_autogen_items(self):
+        return True
+    # ---
+
+# --- end of RuntimeConfigLayoutNone ---
+
+
+NFT_CONFIG_LAYOUTS = {
+    "none": RuntimeConfigLayoutNone,
+}
+
+
+def load_runtime_config(arg_config):
+    config_layout = NFT_CONFIG_LAYOUTS[arg_config.nft_config_layout]()
+
+    config = RuntimeConfig()
 
     if arg_config.output_dir:
         config.outdir = pathlib.Path(arg_config.output_dir)
@@ -601,16 +640,30 @@ def load_runtime_config(arg_config):
         raise ValueError(arg_config.output_dir)
     # --
 
+    config.fw_config_files = (
+        config_layout.get_default_fw_config_files()
+        + (
+            arg_config.config
+            or config_layout.get_fallback_fw_config_files()
+        )
+    )
+
+    if not config.fw_config_files:
+        raise ValueError("no config files specified")
+    # --
+
+    config.template_dirs = SearchDirs()
+    config.template_dirs.add_search_dirs(config_layout.get_default_template_dirs())
     if arg_config.template_dirs:
-        config.template_dirs = SearchDirs(reversed(arg_config.template_dirs))
+        config.template_dirs.add_search_dirs(arg_config.template_dirs)
     else:
-        config.template_dirs = SearchDirs([os.path.join(os.getcwd(), 'templates')])
+        config.template_dirs.add_search_dirs(config_layout.get_fallback_template_dirs())
     # --
 
     if arg_config.autogen_items:
         config.autogen_items = AutogenItemTypes(arg_config.autogen_items)
     else:
-        config.autogen_items = AutogenItemTypes(True)
+        config.autogen_items = AutogenItemTypes(config_layout.get_fallback_autogen_items())
     # --
 
     return config
@@ -969,6 +1022,14 @@ def get_argument_parser(prog):
         default=[], action='append',
         choices=sorted(AutogenItemTypes.AUTOGEN_ITEM_TYPES),
         help='restrict autogen output item types'
+    )
+
+    arg_parser.add_argument(
+        '-L', '--layout',
+        dest='nft_config_layout',
+        default='none',
+        choices=sorted(NFT_CONFIG_LAYOUTS),
+        help="nft configuration struct layout (default: %(default)s)"
     )
 
     return arg_parser
