@@ -489,6 +489,19 @@ class SearchDirs(object):
             yield (search_dir / filename)
     # --- end of gen_file_candidates (...) ---
 
+    def get_subdir(self, relpath):
+        relpath = pathlib.Path(relpath)
+        if relpath.is_absolute():
+            raise ValueError(relpath)
+
+        return self.__class__(
+            search_dirs=(
+                d for d in self.gen_file_candidates(relpath)
+                if d.is_dir()
+            )
+        )
+    # --- end of get_subdir (...) ---
+
     def get_filepath(self, filename):
         for filepath in self.gen_file_candidates(filename):
             if filepath.is_file():
