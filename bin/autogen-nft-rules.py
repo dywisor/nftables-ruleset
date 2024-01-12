@@ -458,9 +458,12 @@ class FirewallConfig:
 class SearchDirs(object):
     __slots__ = ['search_dirs']
 
-    def __init__(self, search_dirs):
+    def __init__(self, search_dirs=None):
         super().__init__()
-        self.search_dirs = collections.deque((pathlib.Path(p) for p in search_dirs))
+        self.search_dirs = collections.deque()
+
+        if search_dirs:
+            self.search_dirs.extend((pathlib.Path(p) for p in search_dirs))
     # --- end of __init__ (...) ---
 
     def add_search_dirs(self, search_dirs, *, top=True):
