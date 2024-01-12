@@ -579,7 +579,8 @@ class FilterChainTemplate(object):
 @dataclass
 class RuntimeConfig:
     template_dirs       : Optional[SearchDirs] = field(default=None)
-    outdir              : Optional[pathlib.Path] = field(default=None)
+    outdir_filters      : Optional[pathlib.Path] = field(default=None)
+    outdir_gen          : Optional[pathlib.Path] = field(default=None)
     nft_config_root     : Optional[pathlib.Path] = field(default=None)
     nft_fw_config_dirs  : Optional[SearchDirs] = field(default=None)
     autogen_items       : Optional[AutogenItemTypes] = field(default=None)
@@ -617,10 +618,12 @@ class AbstractRuntimeConfigLayout(object, metaclass=abc.ABCMeta):
         self.nft_config_root = nft_config_root
     # ---
 
-    # outdir has no "default", only "fallback"
-    @abc.abstractmethod
-    def get_fallback_outdir(self):
-        return None
+    # outdir_* have no "default", only "fallback"
+    def get_fallback_outdir_gen(self):
+        return self.nft_config_root
+
+    def get_fallback_outdir_filters(self):
+        return self.nft_config_root
 
     def get_default_fw_config_files(self):
         return []
@@ -716,9 +719,9 @@ class RuntimeConfigLayoutNFTX(AbstractRuntimeConfigLayout):
         self.nftx_config_files = nftx_config_files
     # --- end of scan_nftx (...) ---
 
-    def get_fallback_outdir(self):
+    def get_fallback_outdir_filters(self):
         return (self.nftx_root / 'node')
-    # --- end of get_fallback_outdir (...) ---
+    # --- end of get_fallback_outdir_filters (...) ---
 
     def get_default_fw_config_files(self):
         return list(self.nftx_config_files)
@@ -770,9 +773,12 @@ def load_runtime_config(arg_config):
     config_layout = config_layout_cls(nft_config_root=config.nft_config_root)
 
     if arg_config.output_dir:
-        config.outdir = pathlib.Path(arg_config.output_dir)
+        config.outdir_gen = pathlib.Path(arg_config.output_dir)
+        config.outdir_filters = config.outdir_gen
+
     else:
-        config.outdir = config_layout.get_fallback_outdir()
+        config.outdir_gen = config_layout.get_fallback_outdir_gen()
+        config.outdir_filters = config_layout.get_fallback_outdir_filters()
     # --
 
     config.fw_config_files = (
@@ -1694,7 +1700,7 @@ def main(prog, argv):
     ]:
         for filter_chain in (c for c in filter_chains if c in config.autogen_items):
             filter_chain_template = None
-            filter_chain_outdir = config.outdir / filter_chain
+            filter_chain_outdir = config.outdir_filters / filter_chain
             filter_chain_config_dirs = config.nft_fw_config_dirs.get_subdir(filter_chain)
 
             os.makedirs(filter_chain_outdir, exist_ok=True)
@@ -1731,7 +1737,7 @@ def main(prog, argv):
         # -- end for filter_chain, ...
     # -- end for filter_chains, ...
 
-    autogen_rules_outdir = config.outdir / 'gen' / 'global'
+    autogen_rules_outdir = config.outdir_gen / 'gen' / 'global'
     autogen_rules_outfile = autogen_rules_outdir / 'autogen.nft'
 
     os.makedirs(autogen_rules_outdir, exist_ok=True)
