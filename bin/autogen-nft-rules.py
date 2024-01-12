@@ -630,8 +630,85 @@ class RuntimeConfigLayoutNone(AbstractRuntimeConfigLayout):
 # --- end of RuntimeConfigLayoutNone ---
 
 
+class RuntimeConfigLayoutNFTX(AbstractRuntimeConfigLayout):
+
+    def __init__(self, nft_config_root):
+        super().__init__(nft_config_root=nft_config_root)
+        self.nftx_root = (self.nft_config_root / 'nftx')
+        self.nftx_layout_dir = (self.nftx_root / 'layout')
+
+        with open((self.nftx_layout_dir / 'layout_meta.yml'), 'rt') as fh:
+            self.nftx_layout_config = yaml.safe_load(fh)
+
+        self.nftx_search_dirs = None
+        self.nftx_config_files = None
+
+        self.scan_nftx()
+    # --- end of __init__ (...) ---
+
+    def scan_nftx(self):
+        def gen_candidates():
+            nftx_root = self.nftx_root
+
+            yield (nftx_root / 'global')
+            yield (nftx_root / 'site')
+
+            try:
+                for entry in (nftx_root / 'roles').iterdir():
+                    if entry.is_dir():
+                        yield entry
+            except FileNotFoundError:
+                pass
+
+            yield (nftx_root / 'cluster')
+            yield (nftx_root / 'node')
+        # --- end of gen_candidates (...) ---
+
+        nftx_search_dirs = []
+        nftx_config_files = []
+
+        for candidate_dir in gen_candidates():
+            candidate_conf = (candidate_dir / 'config.yml')
+
+            if candidate_conf.is_file():
+                nftx_search_dirs.append(candidate_dir)
+                nftx_config_files.append(candidate_conf)
+            # --
+        # --
+
+        self.nftx_search_dirs = nftx_search_dirs
+        self.nftx_config_files = nftx_config_files
+    # --- end of scan_nftx (...) ---
+
+    def get_default_fw_config_files(self):
+        return list(self.nftx_config_files)
+
+    def get_default_template_dirs(self):
+        def gen_candidates():
+            yield (self.nftx_root / 'shared' / 'layouts' / 'common' / 'templates')
+            yield (self.nftx_layout_dir / 'templates')
+        # ---
+
+        return [f for f in gen_candidates() if f.is_dir()]
+    # --- end of get_default_template_dirs (...) ---
+
+    def get_fallback_autogen_items(self):
+        try:
+            filter_chains = self.nftx_layout_config['filter_chains']
+
+        except KeyError:
+            filter_chains = None
+        # --
+
+        return (True if filter_chains is None else filter_chains)
+    # --- end of get_fallback_autogen_items (...) ---
+
+# --- end of RuntimeConfigLayoutNFTX ---
+
+
 NFT_CONFIG_LAYOUTS = {
-    "none": RuntimeConfigLayoutNone,
+    "none"  : RuntimeConfigLayoutNone,
+    "nftx"  : RuntimeConfigLayoutNFTX,
 }
 
 
