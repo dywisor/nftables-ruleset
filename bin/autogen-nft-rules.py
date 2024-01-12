@@ -34,6 +34,50 @@ ANY_ZONE = object()
 NFT_NAME_PREFIX = 'autogen_'
 
 
+class AutogenItemTypes(collections.abc.Container):
+    AUTOGEN_ITEM_TYPES = {
+        "prerouting",
+        "nat_prerouting",
+        "input",
+        "output",
+        "forward",
+        "postrouting",
+        "nat_postrouting",
+    }
+
+    def __init__(self, items):
+        if not items:
+            self.data = set()
+
+        elif items is True:
+            self.data = set(self.AUTOGEN_ITEM_TYPES)
+
+        else:
+            items = set(items)
+            if any((s not in self.AUTOGEN_ITEM_TYPES for s in items)):
+                raise ValueError(items)
+
+            self.data = items
+    # --- end of __init__ (...) ---
+
+    if __debug__:
+        def __contains__(self, key):
+            if key in self.data:
+                return True
+
+            elif key not in self.AUTOGEN_ITEM_TYPES:
+                raise ValueError(key)
+
+            else:
+                return False
+    else:
+
+        def __contains__(self, key):
+            return (key in self.data)
+
+# --- end of AutogenItemTypes ---
+
+
 @enum.unique
 class ZoneForwardConfiguration(enum.IntEnum):
     (
@@ -500,6 +544,7 @@ class FilterChainTemplate(object):
 class RuntimeConfig:
     template_dirs   : Optional[SearchDirs] = field(default=None)
     outdir          : Optional[pathlib.Path] = field(default=None)
+    autogen_items   : Optional[AutogenItemTypes] = field(default=None)
 # --- end of RuntimeConfig ---
 
 
@@ -529,6 +574,12 @@ def load_runtime_config(arg_config):
         config.template_dirs = SearchDirs(reversed(arg_config.template_dirs))
     else:
         config.template_dirs = SearchDirs([os.path.join(os.getcwd(), 'templates')])
+    # --
+
+    if arg_config.autogen_items:
+        config.autogen_items = AutogenItemTypes(arg_config.autogen_items)
+    else:
+        config.autogen_items = AutogenItemTypes(True)
     # --
 
     return config
@@ -879,6 +930,14 @@ def get_argument_parser(prog):
         dest='template_dirs',
         default=[], action='append',
         help='templates directory'
+    )
+
+    arg_parser.add_argument(
+        '-A', '--autogen-item',
+        dest='autogen_items',
+        default=[], action='append',
+        choices=sorted(AutogenItemTypes.AUTOGEN_ITEM_TYPES),
+        help='restrict autogen output item types'
     )
 
     return arg_parser
@@ -1365,29 +1424,32 @@ def main(prog, argv):
     autogen_rules.extend(gen_fwrules_base_sets(fw_config))
 
     #> forward table
-    autogen_rules.append("")
-    autogen_rules.extend(gen_fwrules_forward_table(fw_config))
+    if "forward" in config.autogen_items:
+        autogen_rules.append("")
+        autogen_rules.extend(gen_fwrules_forward_table(fw_config))
 
     #> zone filter chains
     for filter_chain in zone_filter_chains:
-        autogen_rules.append("")
-        autogen_rules.extend(
-            gen_fwrules_generic_zones_lookup_table(
-                fw_config, filter_chain,
-                filter_match_kw[filter_chain]
+        if filter_chain in config.autogen_items:
+            autogen_rules.append("")
+            autogen_rules.extend(
+                gen_fwrules_generic_zones_lookup_table(
+                    fw_config, filter_chain,
+                    filter_match_kw[filter_chain]
+                )
             )
-        )
     # --
 
     #> interface filter chains
     for filter_chain in iface_filter_chains:
-        autogen_rules.append("")
-        autogen_rules.extend(
-            gen_fwrules_generic_interfaces_lookup_table(
-                fw_config, filter_chain,
-                filter_match_kw[filter_chain]
+        if filter_chain in config.autogen_items:
+            autogen_rules.append("")
+            autogen_rules.extend(
+                gen_fwrules_generic_interfaces_lookup_table(
+                    fw_config, filter_chain,
+                    filter_match_kw[filter_chain]
+                )
             )
-        )
     # --
 
     #> prerouting: antispoof
@@ -1404,7 +1466,7 @@ def main(prog, argv):
             )
         ),
     ]:
-        for filter_chain in filter_chains:
+        for filter_chain in (c for c in filter_chains if c in config.autogen_items):
             filter_chain_template = None
             filter_chain_outdir = config.outdir / filter_chain
 
